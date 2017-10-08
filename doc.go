@@ -3,6 +3,4 @@
 /*
 editor document
 */
-package main
-
-// this is a test
+package main
