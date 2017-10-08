@@ -4,6 +4,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"strconv"
 
 	"github.com/andyleap/editor/buffer"
 	"github.com/andyleap/editor/core"
@@ -13,6 +14,22 @@ import (
 
 	"github.com/nsf/termbox-go"
 )
+
+type CurPos struct {
+	b *buffer.Buffer
+}
+
+func (c CurPos) Title() string {
+	return strconv.Itoa(c.b.CurX) + " " + strconv.Itoa(c.b.CurY)
+}
+
+func (c CurPos) Handle() bool {
+	return true
+}
+
+func (c CurPos) SubMenu() []menu.MenuItem {
+	return nil
+}
 
 func main() {
 	/*
@@ -183,6 +200,7 @@ func main() {
 				},
 			},
 		},
+		CurPos{b},
 	}
 
 	e.Add(m)

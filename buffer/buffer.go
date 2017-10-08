@@ -23,7 +23,7 @@ func GetPos(gp *gapbuffer.GapBuffer, x, y int) int {
 		return 0
 	}
 	for l1 := 0; l1 < gp.Len(); l1++ {
-		if x == xPos && y == yPos {
+		if x <= xPos && y == yPos {
 			return l1
 		}
 		if gp.Get(l1) == '\n' {
@@ -107,8 +107,8 @@ func (b *Buffer) Render(r core.Rect) {
 		b.Scroll = b.CurY
 	}
 
-	if b.Scroll < b.CurY-(r.H) {
-		b.Scroll = b.CurY - (r.H)
+	if b.Scroll < b.CurY-(r.H-1) {
+		b.Scroll = b.CurY - (r.H - 1)
 	}
 
 	l1 := 0
@@ -122,20 +122,25 @@ func (b *Buffer) Render(r core.Rect) {
 
 	xPos := 0
 	yPos := 0
-	curX := b.CurX - b.Scroll
-	curY := b.CurY
-
-	for l1 := 0; l1 < b.GB.Len(); l1++ {
+	curX := b.CurX
+	curY := b.CurY - b.Scroll
+	curSet := false
+	for ; l1 < b.GB.Len(); l1++ {
 		if yPos >= r.H {
 			break
 		}
-		if curX == xPos && curY == yPos {
+		if !curSet && (curX <= xPos && curY == yPos) {
 			termbox.SetCursor(r.X+xPos, r.Y+yPos)
+			curSet = true
 		}
 		if b.GB.Get(l1) == '\n' {
-			if curX >= xPos && curY == yPos {
+			if !curSet && (curX >= xPos && curY == yPos) {
 				termbox.SetCursor(r.X+xPos, r.Y+yPos)
+				curSet = true
 			}
+			/*if !curSet && yPos+1 >= r.H {
+				termbox.SetCursor(r.X+xPos, r.Y+yPos)
+			}*/
 			xPos = 0
 			yPos++
 			continue
@@ -147,7 +152,7 @@ func (b *Buffer) Render(r core.Rect) {
 		termbox.SetCell(r.X+xPos, r.Y+yPos, b.GB.Get(l1), termbox.ColorWhite, termbox.ColorBlack)
 		xPos++
 	}
-	if (curX >= xPos && curY == yPos) || curY > yPos {
+	if !curSet {
 		termbox.SetCursor(r.X+xPos, r.Y+yPos)
 	}
 
