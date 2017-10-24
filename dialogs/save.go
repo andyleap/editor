@@ -38,15 +38,15 @@ func NewSaveDialog(path string) *SaveDialog {
 func (d *SaveDialog) Render(r core.Rect) {
 	r = r.Shrink(10, 10)
 
-	core.Frame(r, termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+	core.Frame(r, termbox.ColorWhite, termbox.ColorBlue)
 
-	core.RenderString(r.X+1, r.Y+1, d.path, termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+	core.RenderString(r.X+1, r.Y+1, d.path, termbox.ColorWhite, termbox.ColorBlue)
 
 	if d.scroll == -1 {
 		if d.selected == -1 {
 			core.RenderString(12, 14, "...", termbox.ColorWhite, termbox.ColorBlue)
 		} else {
-			core.RenderString(11, 14, "...", termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+			core.RenderString(11, 14, "...", termbox.ColorWhite, termbox.ColorBlue)
 		}
 	}
 	for y, fi := range d.files {
@@ -63,7 +63,7 @@ func (d *SaveDialog) Render(r core.Rect) {
 		if d.selected == y {
 			core.RenderString(r.X+2, r.Y+y-d.scroll+4, name, termbox.ColorWhite, termbox.ColorBlue)
 		} else {
-			core.RenderString(r.X+1, r.Y+y-d.scroll+4, name, termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+			core.RenderString(r.X+1, r.Y+y-d.scroll+4, name, termbox.ColorWhite, termbox.ColorBlue)
 		}
 	}
 

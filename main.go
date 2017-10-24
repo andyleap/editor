@@ -10,6 +10,8 @@ import (
 	"github.com/andyleap/editor/core"
 	"github.com/andyleap/editor/dialogs"
 	"github.com/andyleap/editor/find"
+	"github.com/andyleap/editor/golight"
+	"github.com/andyleap/editor/gosense"
 	"github.com/andyleap/editor/menu"
 
 	"github.com/nsf/termbox-go"
@@ -50,13 +52,19 @@ func main() {
 	e := core.Core{}
 
 	b := buffer.New(nil)
+
+	b.AddStyler(golight.New(b))
+
 	m := &menu.MenuBar{}
 
 	fp := &core.Enableable{UI: &find.FindPanel{Buf: b}}
 
+	gs := gosense.New(b)
+
 	s := &core.Stack{}
 	s.Add(b)
 	s.Add(fp)
+	s.Add(gs)
 
 	m.Contents = s
 

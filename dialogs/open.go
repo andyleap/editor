@@ -35,15 +35,15 @@ func NewOpenDialog(path string) *OpenDialog {
 func (d *OpenDialog) Render(r core.Rect) {
 	r = r.Shrink(10, 10)
 
-	core.Frame(r, termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+	core.Frame(r, termbox.ColorWhite, termbox.ColorBlue)
 
-	core.RenderString(11, 11, d.path, termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+	core.RenderString(11, 11, d.path, termbox.ColorWhite, termbox.ColorBlue)
 
 	if d.scroll == -1 {
 		if d.selected == -1 {
 			core.RenderString(12, 14, "...", termbox.ColorWhite, termbox.ColorBlue)
 		} else {
-			core.RenderString(11, 14, "...", termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+			core.RenderString(11, 14, "...", termbox.ColorWhite, termbox.ColorBlue)
 		}
 	}
 	for y, fi := range d.files {
@@ -60,7 +60,7 @@ func (d *OpenDialog) Render(r core.Rect) {
 		if d.selected == y {
 			core.RenderString(12, y-d.scroll+14, name, termbox.ColorWhite, termbox.ColorBlue)
 		} else {
-			core.RenderString(11, y-d.scroll+14, name, termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+			core.RenderString(11, y-d.scroll+14, name, termbox.ColorWhite, termbox.ColorBlue)
 		}
 	}
 	core.RenderString(r.X+r.W-10, r.Y+r.H-1, "Load", termbox.ColorWhite, termbox.ColorBlue)

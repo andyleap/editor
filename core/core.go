@@ -14,20 +14,28 @@ func RenderString(x, y int, text string, fg, bg termbox.Attribute) {
 // └ ┴ ┬ ├ ┼ ┘
 
 func Frame(r Rect, fg, bg termbox.Attribute) {
-	for l1 := r.X + 1; l1 < r.X+r.W; l1++ {
+	for l1 := r.X + 1; l1 < r.X+r.W-1; l1++ {
 		termbox.SetCell(l1, r.Y, '─', fg, bg)
-		termbox.SetCell(l1, r.Y+r.H, '─', fg, bg)
+		termbox.SetCell(l1, r.Y+r.H-1, '─', fg, bg)
 	}
-	for l1 := r.Y + 1; l1 < r.Y+r.H; l1++ {
+	for l1 := r.Y + 1; l1 < r.Y+r.H-1; l1++ {
 		termbox.SetCell(r.X, l1, '│', fg, bg)
-		termbox.SetCell(r.X+r.W, l1, '│', fg, bg)
+		termbox.SetCell(r.X+r.W-1, l1, '│', fg, bg)
 	}
 	termbox.SetCell(r.X, r.Y, '┌', fg, bg)
-	termbox.SetCell(r.X+r.W, r.Y, '┐', fg, bg)
-	termbox.SetCell(r.X, r.Y+r.H, '└', fg, bg)
-	termbox.SetCell(r.X+r.W, r.Y+r.H, '┘', fg, bg)
-	for l1 := r.Y + 1; l1 < r.Y+r.H; l1++ {
-		for l2 := r.X + 1; l2 < r.X+r.W; l2++ {
+	termbox.SetCell(r.X+r.W-1, r.Y, '┐', fg, bg)
+	termbox.SetCell(r.X, r.Y+r.H-1, '└', fg, bg)
+	termbox.SetCell(r.X+r.W-1, r.Y+r.H-1, '┘', fg, bg)
+	for l1 := r.Y + 1; l1 < r.Y+r.H-1; l1++ {
+		for l2 := r.X + 1; l2 < r.X+r.W-1; l2++ {
+			termbox.SetCell(l2, l1, ' ', fg, bg)
+		}
+	}
+}
+
+func FrameBorderless(r Rect, fg, bg termbox.Attribute) {
+	for l1 := r.Y; l1 < r.Y+r.H; l1++ {
+		for l2 := r.X; l2 < r.X+r.W; l2++ {
 			termbox.SetCell(l2, l1, ' ', fg, bg)
 		}
 	}

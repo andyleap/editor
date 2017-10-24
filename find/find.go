@@ -94,7 +94,7 @@ func (f *FindPanel) Handle(r core.Rect, evt termbox.Event) bool {
 	if f.selected && evt.Type == termbox.EventKey {
 		ch := evt.Ch
 		switch evt.Key {
-		case termbox.KeyBackspace:
+		case termbox.KeyBackspace, termbox.KeyBackspace2:
 			if f.curPos > 0 {
 				f.searchString = f.searchString[:f.curPos-1] + f.searchString[f.curPos:]
 				f.curPos--

@@ -6,6 +6,10 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+type Styler interface {
+	Style(pos int, ifg, ibg termbox.Attribute) (fg, bg termbox.Attribute)
+}
+
 type Buffer struct {
 	GB *gapbuffer.GapBuffer
 
@@ -14,6 +18,8 @@ type Buffer struct {
 	LineStart  int
 
 	Dirty bool
+
+	stylers []Styler
 }
 
 func GetPos(gp *gapbuffer.GapBuffer, x, y int) int {
@@ -85,6 +91,10 @@ func (b *Buffer) SetPos(p int) {
 	b.CurX, b.CurY = GetCur(b.GB, p)
 }
 
+func (b *Buffer) GetCur(p int) (x, y int) {
+	return GetCur(b.GB, p)
+}
+
 func New(buf []rune) *Buffer {
 	return &Buffer{GB: gapbuffer.New(buf)}
 }
@@ -149,13 +159,32 @@ func (b *Buffer) Render(r core.Rect) {
 			xPos += 4
 			continue
 		}
-		termbox.SetCell(r.X+xPos, r.Y+yPos, b.GB.Get(l1), termbox.ColorWhite, termbox.ColorBlack)
+		fg, bg := termbox.ColorDefault, termbox.ColorDefault
+		for _, styler := range b.stylers {
+			fg, bg = styler.Style(l1, fg, bg)
+		}
+
+		termbox.SetCell(r.X+xPos, r.Y+yPos, b.GB.Get(l1), fg, bg)
 		xPos++
 	}
 	if !curSet {
 		termbox.SetCursor(r.X+xPos, r.Y+yPos)
 	}
 
+}
+
+func (b *Buffer) AddStyler(s Styler) {
+	b.stylers = append(b.stylers, s)
+}
+
+func (b *Buffer) InsertString(str string) {
+	curPos := GetPos(b.GB, b.CurX, b.CurY)
+	for _, ch := range str {
+		b.GB.Insert(curPos, ch)
+		curPos++
+	}
+	b.CurX, b.CurY = GetCur(b.GB, curPos)
+	b.Dirty = true
 }
 
 func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
@@ -168,25 +197,44 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 				curPos--
 			}
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
+			return true
 		case termbox.KeyArrowRight:
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if curPos < b.GB.Len() {
 				curPos++
 			}
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
+			return true
 		case termbox.KeyArrowUp:
 			if b.CurY > 0 {
 				b.CurY--
 			}
+			return true
+		case termbox.KeyPgup:
+			b.CurY -= 10
+			if b.CurY < 0 {
+				b.CurY = 0
+			}
+			return true
 		case termbox.KeyArrowDown:
 			if b.CurY < GetHeight(b.GB) {
 				b.CurY++
 			}
+			return true
+		case termbox.KeyPgdn:
+			b.CurY += 10
+			h := GetHeight(b.GB)
+			if b.CurY > h {
+				b.CurY = h
+			}
+			return true
 		case termbox.KeyEnter:
 			ch = '\n'
 		case termbox.KeySpace:
 			ch = ' '
-		case termbox.KeyBackspace:
+		case termbox.KeyTab:
+			ch = '\t'
+		case termbox.KeyBackspace, termbox.KeyBackspace2:
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if curPos <= 0 {
 				break
@@ -195,6 +243,7 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			curPos--
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			b.Dirty = true
+			return true
 		case termbox.KeyDelete:
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if b.GB.Len()-curPos <= 0 {
@@ -203,6 +252,7 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			b.GB.Delete(curPos + 1)
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			b.Dirty = true
+			return true
 		}
 		if ch != '\x00' {
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
@@ -210,12 +260,29 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			curPos++
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			b.Dirty = true
+			return true
 		}
 	}
 	if evt.Type == termbox.EventMouse && evt.Key == termbox.MouseLeft && r.CheckEvent(evt) {
-		curPos := GetPos(b.GB, evt.MouseX-r.X, evt.MouseY+b.Scroll-r.Y)
-		b.CurX, b.CurY = GetCur(b.GB, curPos)
-		return true
+		switch evt.Key {
+		case termbox.MouseLeft:
+			curPos := GetPos(b.GB, evt.MouseX-r.X, evt.MouseY+b.Scroll-r.Y)
+			b.CurX, b.CurY = GetCur(b.GB, curPos)
+			return true
+		case termbox.MouseWheelUp:
+			b.CurY -= 10
+			if b.CurY < 0 {
+				b.CurY = 0
+			}
+			return true
+		case termbox.MouseWheelDown:
+			b.CurY += 10
+			h := GetHeight(b.GB)
+			if b.CurY > h {
+				b.CurY = h
+			}
+			return true
+		}
 	}
 	return false
 }

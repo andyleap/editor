@@ -18,7 +18,7 @@ func (m *MenuBar) Render(r core.Rect) {
 	xPos := 2
 
 	for l1 := r.X; l1 < r.W+r.X; l1++ {
-		termbox.SetCell(l1, r.Y, ' ', termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+		termbox.SetCell(l1, r.Y, ' ', termbox.ColorWhite, termbox.ColorBlue)
 	}
 
 	for i, item := range m.Items {
@@ -26,7 +26,7 @@ func (m *MenuBar) Render(r core.Rect) {
 			RenderMenu(item.SubMenu(), &m.Pos, 1, r.X+xPos, r.Y+1)
 		}
 		for _, c := range item.Title() {
-			termbox.SetCell(r.X+xPos, r.Y+0, c, termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+			termbox.SetCell(r.X+xPos, r.Y+0, c, termbox.ColorWhite, termbox.ColorBlue)
 			xPos++
 		}
 		xPos += 2
@@ -131,14 +131,14 @@ func (s Separator) SubMenu() []MenuItem {
 func RenderMenu(mis []MenuItem, mp *[]int, depth int, x, y int) {
 	for i, mi := range mis {
 		xPos := 0
-		termbox.SetCell(xPos+x, i+y, ' ', termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+		termbox.SetCell(xPos+x, i+y, ' ', termbox.ColorWhite, termbox.ColorBlue)
 		xPos++
 		for _, c := range mi.Title() {
-			termbox.SetCell(xPos+x, i+y, c, termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+			termbox.SetCell(xPos+x, i+y, c, termbox.ColorWhite, termbox.ColorBlue)
 			xPos++
 		}
 		for ; xPos < 15; xPos++ {
-			termbox.SetCell(xPos+x, i+y, ' ', termbox.ColorWhite, termbox.ColorBlue|termbox.AttrBold)
+			termbox.SetCell(xPos+x, i+y, ' ', termbox.ColorWhite, termbox.ColorBlue)
 		}
 	}
 	if len(*mp) > depth {
