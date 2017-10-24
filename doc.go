@@ -1,6 +1,6 @@
 // editor project doc.go
 
 /*
-editor document
+The `editor` Development Kit
 */
 package main

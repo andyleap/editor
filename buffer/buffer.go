@@ -8,6 +8,8 @@ import (
 
 type Styler interface {
 	Style(pos int, ifg, ibg termbox.Attribute) (fg, bg termbox.Attribute)
+	Insert(pos int)
+	Delete(pos int)
 }
 
 type Buffer struct {
@@ -177,10 +179,24 @@ func (b *Buffer) AddStyler(s Styler) {
 	b.stylers = append(b.stylers, s)
 }
 
+func (b *Buffer) Insert(ch rune) {
+	curPos := GetPos(b.GB, b.CurX, b.CurY)
+	b.GB.Insert(curPos, ch)
+	for _, s := range b.stylers {
+		s.Insert(curPos)
+	}
+	curPos++
+	b.CurX, b.CurY = GetCur(b.GB, curPos)
+	b.Dirty = true
+}
+
 func (b *Buffer) InsertString(str string) {
 	curPos := GetPos(b.GB, b.CurX, b.CurY)
 	for _, ch := range str {
 		b.GB.Insert(curPos, ch)
+		for _, s := range b.stylers {
+			s.Insert(curPos)
+		}
 		curPos++
 	}
 	b.CurX, b.CurY = GetCur(b.GB, curPos)
@@ -240,6 +256,9 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 				break
 			}
 			b.GB.Delete(curPos)
+			for _, s := range b.stylers {
+				s.Delete(curPos)
+			}
 			curPos--
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			b.Dirty = true
@@ -250,16 +269,15 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 				break
 			}
 			b.GB.Delete(curPos + 1)
+			for _, s := range b.stylers {
+				s.Delete(curPos + 1)
+			}
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			b.Dirty = true
 			return true
 		}
 		if ch != '\x00' {
-			curPos := GetPos(b.GB, b.CurX, b.CurY)
-			b.GB.Insert(curPos, ch)
-			curPos++
-			b.CurX, b.CurY = GetCur(b.GB, curPos)
-			b.Dirty = true
+			b.Insert(ch)
 			return true
 		}
 	}

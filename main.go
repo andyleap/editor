@@ -13,6 +13,7 @@ import (
 	"github.com/andyleap/editor/golight"
 	"github.com/andyleap/editor/gosense"
 	"github.com/andyleap/editor/menu"
+	"github.com/andyleap/editor/shortcuts"
 
 	"github.com/nsf/termbox-go"
 )
@@ -212,6 +213,13 @@ func main() {
 	}
 
 	e.Add(m)
+
+	scs := shortcuts.New()
+	scs.Add(termbox.KeyCtrlS, func() {
+		Save(func() {})
+	})
+
+	e.Add(scs)
 
 	e.Run()
 }
