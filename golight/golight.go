@@ -36,6 +36,8 @@ const (
 	ModeBlockComment
 	ModeKeyword
 	ModeString
+	ModeBlockString
+	ModeChar
 )
 
 var Keywords = []string{
@@ -85,6 +87,14 @@ ParseLoop:
 				mode = ModeString
 				style = StyleString
 			}
+			if ch == '\'' {
+				mode = ModeChar
+				style = StyleString
+			}
+			if ch == '`' {
+				mode = ModeBlockString
+				style = StyleString
+			}
 			if l1 == 0 || !unicode.IsLetter(gl.b.GB.Get(l1-1)) {
 				for _, k := range Keywords {
 					if gl.check(l1, k) {
@@ -116,9 +126,28 @@ ParseLoop:
 
 		case ModeString:
 			style = StyleString
-			if ch == '"' {
-				mode = ModeNormal
+			if gl.check(l1, "\\\\") || gl.check(l1, "\\\"") {
+				gl.cache[l1] = style
+				l1++
 				break
+			}
+			if ch == '"' || ch == '\n' {
+				mode = ModeNormal
+			}
+		case ModeChar:
+			style = StyleString
+			if gl.check(l1, "\\'") {
+				gl.cache[l1] = style
+				l1++
+				break
+			}
+			if ch == '\'' || ch == '\n' {
+				mode = ModeNormal
+			}
+		case ModeBlockString:
+			style = StyleString
+			if ch == '`' {
+				mode = ModeNormal
 			}
 		}
 
