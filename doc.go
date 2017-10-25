@@ -3,4 +3,4 @@
 /*
 The `editor` Development Kit
 */
-package main
+package main

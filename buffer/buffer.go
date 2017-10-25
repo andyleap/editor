@@ -10,6 +10,7 @@ type Styler interface {
 	Style(pos int, ifg, ibg termbox.Attribute) (fg, bg termbox.Attribute)
 	Insert(pos int)
 	Delete(pos int)
+	Clear()
 }
 
 type Buffer struct {
@@ -106,6 +107,17 @@ func (b *Buffer) Load(buf []rune) {
 	b.CurX, b.CurY = 0, 0
 	b.Scroll = 0
 	b.Dirty = false
+	for _, s := range b.stylers {
+		s.Clear()
+	}
+}
+
+func (b *Buffer) Update(buf []rune) {
+	b.GB = gapbuffer.New(buf)
+	b.Dirty = true
+	for _, s := range b.stylers {
+		s.Clear()
+	}
 }
 
 func (b *Buffer) Render(r core.Rect) {
@@ -281,20 +293,20 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			return true
 		}
 	}
-	if evt.Type == termbox.EventMouse && evt.Key == termbox.MouseLeft && r.CheckEvent(evt) {
+	if evt.Type == termbox.EventMouse && r.CheckEvent(evt) {
 		switch evt.Key {
 		case termbox.MouseLeft:
 			curPos := GetPos(b.GB, evt.MouseX-r.X, evt.MouseY+b.Scroll-r.Y)
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			return true
 		case termbox.MouseWheelUp:
-			b.CurY -= 10
+			b.CurY -= 2
 			if b.CurY < 0 {
 				b.CurY = 0
 			}
 			return true
 		case termbox.MouseWheelDown:
-			b.CurY += 10
+			b.CurY += 2
 			h := GetHeight(b.GB)
 			if b.CurY > h {
 				b.CurY = h

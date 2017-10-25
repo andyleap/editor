@@ -44,9 +44,9 @@ func (d *SaveDialog) Render(r core.Rect) {
 
 	if d.scroll == -1 {
 		if d.selected == -1 {
-			core.RenderString(12, 14, "...", termbox.ColorWhite, termbox.ColorBlue)
+			core.RenderString(12, 14, "../", termbox.ColorWhite, termbox.ColorBlue)
 		} else {
-			core.RenderString(11, 14, "...", termbox.ColorWhite, termbox.ColorBlue)
+			core.RenderString(11, 14, "../", termbox.ColorWhite, termbox.ColorBlue)
 		}
 	}
 	for y, fi := range d.files {
@@ -58,7 +58,7 @@ func (d *SaveDialog) Render(r core.Rect) {
 		}
 		name := fi.Name()
 		if fi.IsDir() {
-			name = name + ".."
+			name = name + "/"
 		}
 		if d.selected == y {
 			core.RenderString(r.X+2, r.Y+y-d.scroll+4, name, termbox.ColorWhite, termbox.ColorBlue)

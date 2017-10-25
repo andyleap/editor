@@ -4,6 +4,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strconv"
 
 	"github.com/andyleap/editor/buffer"
@@ -34,18 +35,26 @@ func (c CurPos) SubMenu() []menu.MenuItem {
 	return nil
 }
 
-func main() {
-	/*
-		if len(os.Args) < 2 {
-			log.Fatal("No file specified")
-		}
-		file := os.Args[1]
+type Unsaved struct {
+	b *buffer.Buffer
+}
 
-		fileData, err := ioutil.ReadFile(file)
-		if err != nil {
-			log.Fatal(err)
-		}
-	*/
+func (u Unsaved) Title() string {
+	if u.b.Dirty {
+		return "Unsaved"
+	}
+	return ""
+}
+
+func (u Unsaved) Handle() bool {
+	return true
+}
+
+func (u Unsaved) SubMenu() []menu.MenuItem {
+	return nil
+}
+
+func main() {
 	termbox.Init()
 	defer termbox.Close()
 	termbox.SetInputMode(termbox.InputMouse | termbox.InputEsc)
@@ -70,6 +79,28 @@ func main() {
 	m.Contents = s
 
 	var file *os.File
+
+	if len(os.Args) == 2 {
+		f, err := os.OpenFile(os.Args[1], os.O_RDWR, 0666)
+		if err == nil {
+			file = f
+			data, _ := ioutil.ReadAll(file)
+			b.Load([]rune(string(data)))
+		}
+	}
+
+	Fmt := func() {
+		cmd := exec.Command("gofmt")
+		stdin, _ := cmd.StdinPipe()
+		go func() {
+			b.GB.WriteTo(stdin)
+			stdin.Close()
+		}()
+		out, err := cmd.Output()
+		if err == nil {
+			b.Update([]rune(string(out)))
+		}
+	}
 
 	SaveAs := func(then func()) {
 		curDir, _ := os.Getwd()
@@ -210,6 +241,7 @@ func main() {
 			},
 		},
 		CurPos{b},
+		Unsaved{b},
 	}
 
 	e.Add(m)
@@ -217,6 +249,14 @@ func main() {
 	scs := shortcuts.New()
 	scs.Add(termbox.KeyCtrlS, func() {
 		Save(func() {})
+	})
+	scs.Add(termbox.KeyCtrlF, func() {
+		Fmt()
+	})
+	scs.Add(termbox.KeyCtrlX, func() {
+		if !b.Dirty {
+			Exit()
+		}
 	})
 
 	e.Add(scs)

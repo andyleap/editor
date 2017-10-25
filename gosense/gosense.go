@@ -69,9 +69,17 @@ func (gs *GoSense) Handle(r core.Rect, evt termbox.Event) bool {
 		return true
 	}
 
+	if evt.Type == termbox.EventKey && evt.Ch == '.' {
+		gs.b.Handle(r, evt)
+		gs.getOptions()
+		return true
+	}
+
 	if len(gs.Options) > 0 {
 		if evt.Type == termbox.EventKey {
 			switch evt.Key {
+			case termbox.KeyEsc:
+				gs.Options = nil
 			case termbox.KeyEnter, termbox.KeyTab, termbox.KeySpace:
 				gs.b.InsertString(gs.Options[gs.Selected].Name[gs.Offset:])
 				gs.Options = nil

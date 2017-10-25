@@ -152,3 +152,5 @@ func (gl *GoLight) Style(pos int, ifg, ibg termbox.Attribute) (fg, bg termbox.At
 func (gl *GoLight) Insert(pos int) { gl.cache = gl.cache[:0] }
 
 func (gl *GoLight) Delete(pos int) { gl.cache = gl.cache[:0] }
+
+func (gl *GoLight) Clear() { gl.cache = gl.cache[:0] }
