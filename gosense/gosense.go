@@ -37,7 +37,7 @@ func New(b *buffer.Buffer) *GoSense {
 func (gs *GoSense) Render(r core.Rect) {
 	if len(gs.Options) > 0 {
 		cX, cY := gs.X, gs.Y-gs.b.Scroll
-		finalRect := core.Rect{r.X + cX, r.Y + (cY + 1), 40, r.H - (cY + 1)}
+		finalRect := core.Rect{r.X + cX, r.Y + (cY + 1), 120, r.H - (cY + 1)}
 		if finalRect.H > len(gs.Options) {
 			finalRect.H = len(gs.Options)
 		}
@@ -58,6 +58,7 @@ func (gs *GoSense) Render(r core.Rect) {
 				fg = termbox.ColorWhite | termbox.AttrBold
 			}
 			core.RenderString(finalRect.X, finalRect.Y+i, option.Name, fg, termbox.ColorBlue)
+			core.RenderString(finalRect.X + 60, finalRect.Y+i, option.Type, fg, termbox.ColorBlue)
 		}
 	}
 }

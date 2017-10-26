@@ -1,6 +1,9 @@
 package buffer
 
 import (
+	"io/ioutil"
+	"os"
+
 	"github.com/andyleap/editor/core"
 	"github.com/andyleap/gapbuffer"
 	"github.com/nsf/termbox-go"
@@ -21,6 +24,9 @@ type Buffer struct {
 	LineStart  int
 
 	Dirty bool
+
+	Filename string
+	File     *os.File
 
 	stylers []Styler
 }
@@ -107,6 +113,30 @@ func (b *Buffer) Load(buf []rune) {
 	b.CurX, b.CurY = 0, 0
 	b.Scroll = 0
 	b.Dirty = false
+	b.Filename = ""
+	b.File = nil
+	for _, s := range b.stylers {
+		s.Clear()
+	}
+}
+
+func (b *Buffer) LoadFile(filename string) {
+	if b.File != nil {
+		b.File.Close()
+		b.File = nil
+	}
+	f, err := os.OpenFile(filename, os.O_RDWR, 0666)
+	if err == nil {
+		b.File = f
+		data, _ := ioutil.ReadAll(b.File)
+		b.GB = gapbuffer.New([]rune(string([]byte(data))))
+	} else {
+		b.GB = gapbuffer.New(nil)
+	}
+	b.CurX, b.CurY = 0, 0
+	b.Scroll = 0
+	b.Dirty = false
+	b.Filename = filename
 	for _, s := range b.stylers {
 		s.Clear()
 	}
@@ -283,6 +313,23 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			b.GB.Delete(curPos + 1)
 			for _, s := range b.stylers {
 				s.Delete(curPos + 1)
+			}
+			b.CurX, b.CurY = GetCur(b.GB, curPos)
+			b.Dirty = true
+			return true
+		case termbox.KeyCtrlK:
+
+			for _, s := range b.stylers {
+				s.Clear()
+			}
+
+			curPos := GetPos(b.GB, b.CurX, b.CurY)
+			for curPos > 0 && b.GB.Get(curPos-1) != '\n' {
+				curPos--
+			}
+			b.GB.Delete(curPos)
+			for curPos < b.GB.Len() && b.GB.Get(curPos-1) != '\n' {
+				b.GB.Delete(curPos)
 			}
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			b.Dirty = true

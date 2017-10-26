@@ -2,7 +2,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -78,15 +77,8 @@ func main() {
 
 	m.Contents = s
 
-	var file *os.File
-
 	if len(os.Args) == 2 {
-		f, err := os.OpenFile(os.Args[1], os.O_RDWR, 0666)
-		if err == nil {
-			file = f
-			data, _ := ioutil.ReadAll(file)
-			b.Load([]rune(string(data)))
-		}
+		b.LoadFile(os.Args[1])
 	}
 
 	Fmt := func() {
@@ -110,11 +102,12 @@ func main() {
 			if err != nil {
 				return
 			}
-			if file != nil {
-				file.Close()
+			if b.File != nil {
+				b.File.Close()
 			}
-			file = f
-			b.GB.WriteTo(file)
+			b.File = f
+			b.GB.WriteTo(b.File)
+			b.Filename = fileName
 			b.Dirty = false
 			e.Remove(sd)
 			then()
@@ -126,24 +119,17 @@ func main() {
 		curDir, _ := os.Getwd()
 		od := dialogs.NewOpenDialog(curDir)
 		od.Load = func(fileName string) {
-			f, err := os.OpenFile(fileName, os.O_RDWR, 0666)
-			if err != nil {
-				return
-			}
-			file = f
-			data, _ := ioutil.ReadAll(file)
-			b.Load([]rune(string(data)))
+			b.LoadFile(fileName)
 			e.Remove(od)
-			return
 		}
 		e.Add(od)
 	}
 
 	Save := func(then func()) {
-		if file != nil {
-			file.Seek(0, os.SEEK_SET)
-			file.Truncate(0)
-			b.GB.WriteTo(file)
+		if b.File != nil {
+			b.File.Seek(0, os.SEEK_SET)
+			b.File.Truncate(0)
+			b.GB.WriteTo(b.File)
 			b.Dirty = false
 			then()
 		} else {
