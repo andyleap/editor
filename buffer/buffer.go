@@ -21,6 +21,10 @@ type Buffer struct {
 
 	Scroll     int
 	CurX, CurY int
+	
+	CutBuf []rune
+	LastCut int
+
 	LineStart  int
 
 	Dirty bool
@@ -318,21 +322,31 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			b.Dirty = true
 			return true
 		case termbox.KeyCtrlK:
-
 			for _, s := range b.stylers {
 				s.Clear()
 			}
-
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
+			if curPos != b.LastCut {
+				b.CutBuf = b.CutBuf[:0]
+			}
+			
 			for curPos > 0 && b.GB.Get(curPos-1) != '\n' {
 				curPos--
 			}
+			b.CutBuf = append(b.CutBuf, b.GB.Get(curPos))
 			b.GB.Delete(curPos)
 			for curPos < b.GB.Len() && b.GB.Get(curPos-1) != '\n' {
+				b.CutBuf = append(b.CutBuf, b.GB.Get(curPos))
 				b.GB.Delete(curPos)
 			}
+			b.LastCut = curPos
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			b.Dirty = true
+			return true
+		case termbox.KeyCtrlU:
+			for _, ch := range b.CutBuf {
+				b.Insert(ch)
+			}
 			return true
 		}
 		if ch != '\x00' {
