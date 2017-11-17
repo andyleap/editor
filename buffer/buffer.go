@@ -21,11 +21,11 @@ type Buffer struct {
 
 	Scroll     int
 	CurX, CurY int
-	
-	CutBuf []rune
+
+	CutBuf  []rune
 	LastCut int
 
-	LineStart  int
+	LineStart int
 
 	Dirty bool
 
@@ -290,6 +290,15 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 				b.CurY = h
 			}
 			return true
+		case termbox.KeyHome:
+			b.CurX = 0
+			return true
+		case termbox.KeyEnd:
+			curPos := b.Pos()
+			for curPos < b.GB.Len() && b.GB.Get(curPos) != '\n' {
+				curPos++
+			}
+			b.SetPos(curPos)
 		case termbox.KeyEnter:
 			ch = '\n'
 		case termbox.KeySpace:
@@ -329,10 +338,11 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			if curPos != b.LastCut {
 				b.CutBuf = b.CutBuf[:0]
 			}
-			
+
 			for curPos > 0 && b.GB.Get(curPos-1) != '\n' {
 				curPos--
 			}
+
 			b.CutBuf = append(b.CutBuf, b.GB.Get(curPos))
 			b.GB.Delete(curPos)
 			for curPos < b.GB.Len() && b.GB.Get(curPos-1) != '\n' {

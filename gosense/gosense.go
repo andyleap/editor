@@ -48,6 +48,14 @@ func (gs *GoSense) Render(r core.Rect) {
 				finalRect.Y = r.Y + (cY - len(gs.Options))
 			}
 		}
+
+		if gs.Scroll > gs.Selected {
+			gs.Scroll = gs.Selected
+		}
+		if gs.Scroll < gs.Selected-(finalRect.H-1) {
+			gs.Scroll = gs.Selected - (finalRect.H - 1)
+		}
+
 		core.FrameBorderless(finalRect, termbox.ColorWhite, termbox.ColorBlue)
 		for i, option := range gs.Options[gs.Scroll:] {
 			if i >= finalRect.H {
@@ -58,7 +66,7 @@ func (gs *GoSense) Render(r core.Rect) {
 				fg = termbox.ColorWhite | termbox.AttrBold
 			}
 			core.RenderString(finalRect.X, finalRect.Y+i, option.Name, fg, termbox.ColorBlue)
-			core.RenderString(finalRect.X + 60, finalRect.Y+i, option.Type, fg, termbox.ColorBlue)
+			core.RenderString(finalRect.X+60, finalRect.Y+i, option.Type, fg, termbox.ColorBlue)
 		}
 	}
 }
@@ -114,7 +122,21 @@ func (gs *GoSense) Handle(r core.Rect, evt termbox.Event) bool {
 
 func (gs *GoSense) getOptions() {
 	gs.Pos = gs.b.Pos()
-	cmd := exec.Command("gocode", "-f=json", "autocomplete", fmt.Sprintf("c%d", gs.Pos))
+
+	/*
+		wd, _ := os.Getwd()
+		filename := filepath.Join(wd, gs.b.Filename)
+
+		closest := ""
+		for _, p := range filepath.SplitList(os.Getenv("GOPATH")) {
+			rel, _ := filepath.Rel(filepath.Join(p, "src"), filename)
+			if closest == "" || len(rel) < len(closest) {
+				closest = rel
+			}
+		}
+	*/
+
+	cmd := exec.Command("gocode", "-f=json", "autocomplete", gs.b.Filename, fmt.Sprintf("c%d", gs.Pos))
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
