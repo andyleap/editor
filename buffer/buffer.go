@@ -54,7 +54,7 @@ func GetPos(gp *gapbuffer.GapBuffer, x, y int) int {
 			continue
 		}
 		if gp.Get(l1) == '\t' {
-			xPos += 4
+			xPos = xPos + 4 - (xPos % 4)
 			continue
 		}
 		xPos++
@@ -75,7 +75,7 @@ func GetCur(gp *gapbuffer.GapBuffer, pos int) (x, y int) {
 			continue
 		}
 		if gp.Get(l1) == '\t' {
-			xPos += 4
+			xPos = xPos + 4 - (xPos % 4)
 			continue
 		}
 		xPos++
@@ -204,7 +204,7 @@ func (b *Buffer) Render(r core.Rect) {
 			continue
 		}
 		if b.GB.Get(l1) == '\t' {
-			xPos += 4
+			xPos = xPos + 4 - (xPos % 4)
 			continue
 		}
 		fg, bg := termbox.ColorDefault, termbox.ColorDefault
@@ -341,6 +341,9 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 
 			for curPos > 0 && b.GB.Get(curPos-1) != '\n' {
 				curPos--
+			}
+			if curPos >= b.GB.Len() {
+				return true
 			}
 
 			b.CutBuf = append(b.CutBuf, b.GB.Get(curPos))
