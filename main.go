@@ -15,7 +15,7 @@ import (
 	"github.com/andyleap/editor/menu"
 	"github.com/andyleap/editor/shortcuts"
 
-	"github.com/nsf/termbox-go"
+	"github.com/andyleap/termbox-go"
 )
 
 type CurPos struct {

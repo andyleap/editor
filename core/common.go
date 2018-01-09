@@ -1,6 +1,6 @@
 package core
 
-import "github.com/nsf/termbox-go"
+import "github.com/andyleap/termbox-go"
 
 type Enableable struct {
 	UI      UI

@@ -4,7 +4,7 @@ import (
 	"unicode"
 
 	"github.com/andyleap/editor/buffer"
-	"github.com/nsf/termbox-go"
+	"github.com/andyleap/termbox-go"
 )
 
 type Style int

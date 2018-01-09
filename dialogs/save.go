@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/andyleap/editor/core"
-	"github.com/nsf/termbox-go"
+	"github.com/andyleap/termbox-go"
 )
 
 type SaveDialog struct {

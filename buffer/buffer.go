@@ -6,7 +6,7 @@ import (
 
 	"github.com/andyleap/editor/core"
 	"github.com/andyleap/gapbuffer"
-	"github.com/nsf/termbox-go"
+	"github.com/andyleap/termbox-go"
 )
 
 type Styler interface {

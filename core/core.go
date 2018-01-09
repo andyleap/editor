@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/nsf/termbox-go"
+	"github.com/andyleap/termbox-go"
 )
 
 func RenderString(x, y int, text string, fg, bg termbox.Attribute) {

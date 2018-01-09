@@ -2,7 +2,7 @@ package dialogs
 
 import (
 	"github.com/andyleap/editor/core"
-	"github.com/nsf/termbox-go"
+	"github.com/andyleap/termbox-go"
 )
 
 type Option struct {
