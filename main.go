@@ -23,7 +23,7 @@ type CurPos struct {
 }
 
 func (c CurPos) Title() string {
-	return strconv.Itoa(c.b.CurX) + " " + strconv.Itoa(c.b.CurY)
+	return c.b.Filename + " L" + strconv.Itoa(c.b.CurY+1) + ":" + strconv.Itoa(c.b.CurX+1)
 }
 
 func (c CurPos) Handle() bool {
@@ -98,17 +98,7 @@ func main() {
 		curDir, _ := os.Getwd()
 		sd := dialogs.NewSaveDialog(curDir)
 		sd.Save = func(fileName string) {
-			f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-			if err != nil {
-				return
-			}
-			if b.File != nil {
-				b.File.Close()
-			}
-			b.File = f
-			b.GB.WriteTo(b.File)
-			b.Filename = fileName
-			b.Dirty = false
+			b.SaveFileAs(fileName)
 			e.Remove(sd)
 			then()
 		}
@@ -126,13 +116,7 @@ func main() {
 	}
 
 	Save := func(then func()) {
-		if b.File != nil {
-			b.File.Seek(0, os.SEEK_SET)
-			b.File.Truncate(0)
-			b.GB.WriteTo(b.File)
-			b.Dirty = false
-			then()
-		} else {
+		if b.SaveFile() != nil {
 			SaveAs(then)
 		}
 	}

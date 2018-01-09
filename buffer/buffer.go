@@ -124,6 +124,33 @@ func (b *Buffer) Load(buf []rune) {
 	}
 }
 
+func (b *Buffer) SaveFile() error {
+	if b.File == nil && b.Filename != "" {
+		f, err := os.Create(b.Filename)
+		if err != nil {
+			return err
+		}
+		b.File = f
+	}
+	b.File.Truncate(0)
+	b.GB.WriteTo(b.File)
+	b.Dirty = false
+	return nil
+}
+
+func (b *Buffer) SaveFileAs(filename string) error {
+	if b.File != nil {
+		b.File.Close()
+		b.File = nil
+	}
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0666)
+	if err != nil {
+		return err
+	}
+	b.File = f
+	return b.SaveFile()
+}
+
 func (b *Buffer) LoadFile(filename string) {
 	if b.File != nil {
 		b.File.Close()
