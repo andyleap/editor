@@ -2,6 +2,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	"github.com/andyleap/editor/shortcuts"
 
 	"github.com/andyleap/termbox-go"
+	"github.com/jessevdk/go-flags"
 )
 
 type CurPos struct {
@@ -53,20 +55,34 @@ func (u Unsaved) SubMenu() []menu.MenuItem {
 	return nil
 }
 
+var Options struct {
+	Log bool `long:"log"`
+}
+
 func main() {
+	args, err := flags.Parse(&Options)
+	if err != nil {
+		log.Fatal(err)
+	}
 	termbox.Init()
 	defer termbox.Close()
 	termbox.SetInputMode(termbox.InputMouse | termbox.InputEsc)
-
-	e := core.Core{}
+	var logger *log.Logger
+	if Options.Log {
+		logfile, _ := os.Create("events.log")
+		logger = log.New(logfile, "", log.Lshortfile)
+	}
+	e := core.Core{
+		Log: logger,
+	}
 
 	b := buffer.New(nil)
 
 	b.AddStyler(golight.New(b))
 
 	m := &menu.MenuBar{}
-
-	fp := &core.Enableable{UI: &find.FindPanel{Buf: b}}
+	finder := &find.FindPanel{Buf: b}
+	fp := &core.Enableable{UI: finder}
 
 	gs := gosense.New(b)
 
@@ -77,8 +93,8 @@ func main() {
 
 	m.Contents = s
 
-	if len(os.Args) == 2 {
-		b.LoadFile(os.Args[1])
+	if len(args) >= 1 {
+		b.LoadFile(args[0])
 	}
 
 	Fmt := func() {
@@ -227,6 +243,18 @@ func main() {
 		if !b.Dirty {
 			Exit()
 		}
+	})
+	scs.Add(termbox.KeyCtrlW, func() {
+		fp.Enabled = !fp.Enabled
+		if fp.Enabled {
+			finder.Focus()
+		}
+	})
+	scs.AddMod(termbox.KeyArrowDown, termbox.ModAlt, func() {
+		finder.Search(false)
+	})
+	scs.AddMod(termbox.KeyArrowUp, termbox.ModAlt, func() {
+		finder.Search(true)
 	})
 
 	e.Add(scs)

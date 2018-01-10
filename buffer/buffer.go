@@ -22,6 +22,8 @@ type Buffer struct {
 	Scroll     int
 	CurX, CurY int
 
+	Sel int
+
 	CutBuf  []rune
 	LastCut int
 
@@ -109,7 +111,7 @@ func (b *Buffer) GetCur(p int) (x, y int) {
 }
 
 func New(buf []rune) *Buffer {
-	return &Buffer{GB: gapbuffer.New(buf)}
+	return &Buffer{GB: gapbuffer.New(buf), Sel: -1}
 }
 
 func (b *Buffer) Load(buf []rune) {
@@ -119,6 +121,7 @@ func (b *Buffer) Load(buf []rune) {
 	b.Dirty = false
 	b.Filename = ""
 	b.File = nil
+	b.Sel = -1
 	for _, s := range b.stylers {
 		s.Clear()
 	}
@@ -132,6 +135,7 @@ func (b *Buffer) SaveFile() error {
 		}
 		b.File = f
 	}
+	b.File.Seek(0, os.SEEK_SET)
 	b.File.Truncate(0)
 	b.GB.WriteTo(b.File)
 	b.Dirty = false
@@ -167,6 +171,7 @@ func (b *Buffer) LoadFile(filename string) {
 	b.CurX, b.CurY = 0, 0
 	b.Scroll = 0
 	b.Dirty = false
+	b.Sel = -1
 	b.Filename = filename
 	for _, s := range b.stylers {
 		s.Clear()
@@ -210,16 +215,26 @@ func (b *Buffer) Render(r core.Rect) {
 	curX := b.CurX
 	curY := b.CurY - b.Scroll
 	curSet := false
+	inSel := false
 	for ; l1 < b.GB.Len(); l1++ {
+		if b.Sel >= 0 && b.Sel == l1 {
+			inSel = !inSel
+		}
 		if yPos >= r.H {
 			break
 		}
 		if !curSet && (curX <= xPos && curY == yPos) {
+			if b.Sel >= 0 {
+				inSel = !inSel
+			}
 			termbox.SetCursor(r.X+xPos, r.Y+yPos)
 			curSet = true
 		}
 		if b.GB.Get(l1) == '\n' {
 			if !curSet && (curX >= xPos && curY == yPos) {
+				if b.Sel >= 0 {
+					inSel = !inSel
+				}
 				termbox.SetCursor(r.X+xPos, r.Y+yPos)
 				curSet = true
 			}
@@ -235,6 +250,9 @@ func (b *Buffer) Render(r core.Rect) {
 			continue
 		}
 		fg, bg := termbox.ColorDefault, termbox.ColorDefault
+		if inSel {
+			fg, bg = termbox.ColorBlack, termbox.ColorWhite
+		}
 		for _, styler := range b.stylers {
 			fg, bg = styler.Style(l1, fg, bg)
 		}
@@ -281,6 +299,7 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 		ch := evt.Ch
 		switch evt.Key {
 		case termbox.KeyArrowLeft:
+			b.Sel = -1
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if curPos > 0 {
 				curPos--
@@ -288,6 +307,7 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			return true
 		case termbox.KeyArrowRight:
+			b.Sel = -1
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if curPos < b.GB.Len() {
 				curPos++
@@ -295,22 +315,26 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			b.CurX, b.CurY = GetCur(b.GB, curPos)
 			return true
 		case termbox.KeyArrowUp:
+			b.Sel = -1
 			if b.CurY > 0 {
 				b.CurY--
 			}
 			return true
 		case termbox.KeyPgup:
+			b.Sel = -1
 			b.CurY -= 10
 			if b.CurY < 0 {
 				b.CurY = 0
 			}
 			return true
 		case termbox.KeyArrowDown:
+			b.Sel = -1
 			if b.CurY < GetHeight(b.GB) {
 				b.CurY++
 			}
 			return true
 		case termbox.KeyPgdn:
+			b.Sel = -1
 			b.CurY += 10
 			h := GetHeight(b.GB)
 			if b.CurY > h {
@@ -318,9 +342,12 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			}
 			return true
 		case termbox.KeyHome:
+			b.Sel = -1
 			b.CurX = 0
 			return true
 		case termbox.KeyEnd:
+			b.Sel = -1
+			b.Sel = -1
 			curPos := b.Pos()
 			for curPos < b.GB.Len() && b.GB.Get(curPos) != '\n' {
 				curPos++
@@ -333,6 +360,7 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 		case termbox.KeyTab:
 			ch = '\t'
 		case termbox.KeyBackspace, termbox.KeyBackspace2:
+			b.Sel = -1
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if curPos <= 0 {
 				break
@@ -346,6 +374,7 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			b.Dirty = true
 			return true
 		case termbox.KeyDelete:
+			b.Sel = -1
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if b.GB.Len()-curPos <= 0 {
 				break
@@ -361,6 +390,19 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			for _, s := range b.stylers {
 				s.Clear()
 			}
+			if b.Sel >= 0 {
+				curPos := b.Pos()
+				pos1, pos2 := b.Sel, curPos
+				if pos1 > pos2 {
+					pos1, pos2 = pos2, pos1
+				}
+				b.CutBuf = []rune(b.GB.Cut(pos1, pos2-pos1))
+				b.LastCut = -1
+				b.SetPos(pos1)
+				b.Sel = -1
+				return true
+			}
+
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if curPos != b.LastCut {
 				b.CutBuf = b.CutBuf[:0]
@@ -384,12 +426,34 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			b.Dirty = true
 			return true
 		case termbox.KeyCtrlU:
+			b.Sel = -1
+			for _, ch := range b.CutBuf {
+				b.Insert(ch)
+			}
+			return true
+		case termbox.KeyCtrlC:
+			if b.Sel >= 0 {
+				curPos := b.Pos()
+				pos1, pos2 := b.Sel, curPos
+				if pos1 > pos2 {
+					pos1, pos2 = pos2, pos1
+				}
+				b.CutBuf = b.CutBuf[:0]
+				for l1 := pos1; l1 <= pos2; l1++ {
+					b.CutBuf = append(b.CutBuf, b.GB.Get(l1))
+				}
+				b.LastCut = -1
+			}
+			return true
+		case termbox.KeyCtrlV:
+			b.Sel = -1
 			for _, ch := range b.CutBuf {
 				b.Insert(ch)
 			}
 			return true
 		}
 		if ch != '\x00' {
+			b.Sel = -1
 			b.Insert(ch)
 			return true
 		}
@@ -398,15 +462,22 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 		switch evt.Key {
 		case termbox.MouseLeft:
 			curPos := GetPos(b.GB, evt.MouseX-r.X, evt.MouseY+b.Scroll-r.Y)
-			b.CurX, b.CurY = GetCur(b.GB, curPos)
+			if evt.Mod == termbox.ModMotion {
+				b.Sel = curPos
+			} else {
+				b.Sel = -1
+				b.CurX, b.CurY = GetCur(b.GB, curPos)
+			}
 			return true
 		case termbox.MouseWheelUp:
+			b.Sel = -1
 			b.CurY -= 2
 			if b.CurY < 0 {
 				b.CurY = 0
 			}
 			return true
 		case termbox.MouseWheelDown:
+			b.Sel = -1
 			b.CurY += 2
 			h := GetHeight(b.GB)
 			if b.CurY > h {

@@ -25,11 +25,41 @@ func (f *FindPanel) Render(r core.Rect) {
 		termbox.SetCell(l1, r.Y, ' ', termbox.ColorWhite, termbox.ColorBlue)
 	}
 	core.RenderString(r.X, r.Y, f.searchString, termbox.ColorWhite, termbox.ColorBlue)
-	termbox.SetCell(r.X+r.W-2, r.Y, '▼', termbox.ColorBlue, termbox.ColorWhite)
-	termbox.SetCell(r.X+r.W-1, r.Y, '▲', termbox.ColorBlue, termbox.ColorWhite)
+	termbox.SetCell(r.X+r.W-2, r.Y, '⋁', termbox.ColorBlue, termbox.ColorWhite)
+	termbox.SetCell(r.X+r.W-1, r.Y, '⋀', termbox.ColorBlue, termbox.ColorWhite)
 	if f.selected {
 		termbox.SetCursor(r.X+f.curPos, r.Y)
 	}
+}
+
+func (f *FindPanel) Search(up bool) {
+	step := 1
+	if up {
+		step = -1
+	}
+	p := f.Buf.Pos() + step
+	if p < 0 || p >= f.Buf.GB.Len() {
+		return
+	}
+search:
+	for ; p >= 0 && p < f.Buf.GB.Len(); p += step {
+		for i, c := range f.searchString {
+			if p+i >= f.Buf.GB.Len() {
+				continue search
+			}
+			if c != f.Buf.GB.Get(p+i) {
+				continue search
+			}
+		}
+		f.Buf.SetPos(p)
+		return
+	}
+	return
+}
+
+func (f *FindPanel) Focus() {
+	f.selected = true
+	f.curPos = len(f.searchString)
 }
 
 func (f *FindPanel) Handle(r core.Rect, evt termbox.Event) bool {
@@ -39,45 +69,11 @@ func (f *FindPanel) Handle(r core.Rect, evt termbox.Event) bool {
 		if r.CheckEvent(evt) {
 			if evt.MouseX == r.X+r.W-1 {
 				f.selected = false
-				p := f.Buf.Pos() - 1
-				if p < 0 {
-					return true
-				}
-			searchup:
-				for ; p >= 0; p-- {
-					for i, c := range f.searchString {
-						if p+i >= f.Buf.GB.Len() {
-							continue searchup
-						}
-						if c != f.Buf.GB.Get(p+i) {
-							continue searchup
-						}
-					}
-					f.Buf.SetPos(p)
-					return true
-				}
-				return true
+				f.Search(true)
 			}
 			if evt.MouseX == r.X+r.W-2 {
 				f.selected = false
-				p := f.Buf.Pos() + 1
-				if p >= f.Buf.GB.Len() {
-					return true
-				}
-			searchdown:
-				for ; p < f.Buf.GB.Len(); p++ {
-					for i, c := range f.searchString {
-						if p+i >= f.Buf.GB.Len() {
-							break searchdown
-						}
-						if c != f.Buf.GB.Get(p+i) {
-							continue searchdown
-						}
-					}
-					f.Buf.SetPos(p)
-					return true
-				}
-				return true
+				f.Search(false)
 			}
 			f.selected = true
 			f.curPos = evt.MouseX - r.X
@@ -111,8 +107,12 @@ func (f *FindPanel) Handle(r core.Rect, evt termbox.Event) bool {
 			if f.curPos < len(f.searchString) {
 				f.curPos++
 			}
+		
 		case termbox.KeySpace:
 			ch = ' '
+		case termbox.KeyEnter:
+			f.Search(false)
+			f.selected = false
 		}
 		if ch != '\x00' {
 			f.searchString = f.searchString[:f.curPos] + string(ch) + f.searchString[f.curPos:]

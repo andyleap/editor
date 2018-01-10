@@ -1,6 +1,8 @@
 package core
 
 import (
+	"log"
+
 	"github.com/andyleap/termbox-go"
 )
 
@@ -68,6 +70,7 @@ type UI interface {
 
 type Core struct {
 	s Stack
+	Log *log.Logger
 }
 
 func (c *Core) Add(ui UI) {
@@ -91,6 +94,10 @@ func (c *Core) Run() {
 		termbox.Flush()
 
 		evt := termbox.PollEvent()
+
+		if c.Log != nil {
+			c.Log.Printf("%#v", evt)
+		}
 
 		c.s.Handle(r, evt)
 	}
