@@ -188,6 +188,9 @@ func (gl *GoLight) Kind(pos int) buffer.Kind {
 	if len(gl.cache) == 0 {
 		gl.genCache()
 	}
+	if pos < 0 || pos >= len(gl.cache) {
+		return buffer.KindNormal
+	}
 
 	switch gl.cache[pos] {
 	case StyleComment:
