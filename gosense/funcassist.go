@@ -37,7 +37,10 @@ func (fa *FuncAssist) getFuncPos() (funcPos, argNum int) {
 	if l1 == 0 {
 		return -1, 0
 	}
-	for l1--; l1 >= 0; l1-- {
+	if fa.b.GB.Get(l1) == ')' {
+		l1--
+	}
+	for ; l1 >= 0; l1-- {
 		if gl != nil && gl.Kind(l1) != buffer.KindNormal {
 			continue
 		}
