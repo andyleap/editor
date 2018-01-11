@@ -125,7 +125,7 @@ func (fa *FuncAssist) getFunc(f int) string {
 	json.Unmarshal(out, &data)
 	for _, option := range options {
 		if len(option.Name) == offset {
-			return option.Type
+			return option.Name + strings.TrimPrefix(option.Type, "func")
 		}
 	}
 	return ""
