@@ -32,6 +32,7 @@ func (fa *FuncAssist) getFuncPos() (funcPos, argNum int) {
 		}
 	}
 	level := 0
+	blevel := 0
 	l1 := fa.b.Pos()
 	if l1 == 0 {
 		return -1, 0
@@ -41,6 +42,14 @@ func (fa *FuncAssist) getFuncPos() (funcPos, argNum int) {
 			continue
 		}
 		switch fa.b.GB.Get(l1) {
+		case '}':
+			blevel++
+		case '{':
+			blevel--
+			if blevel < 0 {
+				blevel = 0
+				argNum = 0
+			}
 		case ')':
 			level++
 		case '(':
@@ -53,7 +62,7 @@ func (fa *FuncAssist) getFuncPos() (funcPos, argNum int) {
 				return l1, argNum
 			}
 		case ',':
-			if level == 0 {
+			if level == 0 && blevel == 0 {
 				argNum++
 			}
 		}
@@ -75,23 +84,41 @@ func (fa *FuncAssist) Render(r core.Rect) {
 		fa.lastFunc = fa.getFunc(f)
 	}
 	curArg := 0
-	started := false
-	argCount := strings.Count(fa.lastFunc, ",")
-	for i, c := range fa.lastFunc {
-		fg, bg := termbox.ColorWhite, termbox.ColorBlue
-		if !started {
-			if c == '(' {
-				started = true
+	level := 0
+	argCount := 0
+argLoop:
+	for _, c := range fa.lastFunc {
+		switch c {
+		case '(':
+			level++
+		case ')':
+			level--
+			if level == 0 {
+				break argLoop
 			}
-		} else {
-			if c == ')' {
-				started = false
-			} else if c == ',' {
-				curArg++
-			} else if curArg == arg || (curArg == argCount && arg > curArg) {
-				fg = termbox.ColorWhite | termbox.AttrBold
+		case ',':
+			if level == 1 {
+				argCount++
 			}
 		}
+	}
+	for i, c := range fa.lastFunc {
+		fg, bg := termbox.ColorWhite, termbox.ColorBlue
+		switch c {
+		case '(':
+			level++
+		case ')':
+			level--
+		case ',':
+			if level == 1 {
+				curArg++
+			}
+		}
+
+		if level > 0 && (curArg == arg || (curArg == argCount && arg > curArg)) {
+			fg = termbox.ColorWhite | termbox.AttrBold
+		}
+
 		termbox.SetCell(r.X+i, r.Y, c, fg, bg)
 	}
 }
