@@ -102,23 +102,26 @@ argLoop:
 			}
 		}
 	}
+	done := false
 	for i, c := range fa.lastFunc {
 		fg, bg := termbox.ColorWhite, termbox.ColorBlue
 		switch c {
 		case '(':
-			level++
+			if !done || level > 0 {
+				level++
+				done = true
+			}
 		case ')':
 			level--
 		case ',':
 			if level == 1 {
 				curArg++
 			}
+		default:
+			if level > 0 && (curArg == arg || (curArg == argCount && arg > curArg)) {
+				fg = termbox.ColorWhite | termbox.AttrBold
+			}
 		}
-
-		if level > 0 && (curArg == arg || (curArg == argCount && arg > curArg)) {
-			fg = termbox.ColorWhite | termbox.AttrBold
-		}
-
 		termbox.SetCell(r.X+i, r.Y, c, fg, bg)
 	}
 }
@@ -150,8 +153,12 @@ func (fa *FuncAssist) getFunc(f int) string {
 	}
 
 	json.Unmarshal(out, &data)
+	name := ""
+	for l1 := 0; l1 < offset; l1++ {
+		name = name + string(fa.b.GB.Get(f-offset+l1))
+	}
 	for _, option := range options {
-		if len(option.Name) == offset {
+		if option.Name == name {
 			return option.Name + strings.TrimPrefix(option.Type, "func")
 		}
 	}
