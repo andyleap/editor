@@ -183,3 +183,17 @@ func (gl *GoLight) Insert(pos int) { gl.cache = gl.cache[:0] }
 func (gl *GoLight) Delete(pos int) { gl.cache = gl.cache[:0] }
 
 func (gl *GoLight) Clear() { gl.cache = gl.cache[:0] }
+
+func (gl *GoLight) Kind(pos int) buffer.Kind {
+	if len(gl.cache) == 0 {
+		gl.genCache()
+	}
+
+	switch gl.cache[pos] {
+	case StyleComment:
+		return buffer.KindComment
+	case StyleString:
+		return buffer.KindString
+	}
+	return buffer.KindNormal
+}

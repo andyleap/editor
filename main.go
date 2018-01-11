@@ -91,7 +91,12 @@ func main() {
 	s.Add(fp)
 	s.Add(gs)
 
-	m.Contents = s
+	funcAssist := gosense.NewFuncAssist(b)
+
+	m.Contents = &core.StatusBar{
+		Main: s,
+		Bar: funcAssist,
+	}
 
 	if len(args) >= 1 {
 		b.LoadFile(args[0])

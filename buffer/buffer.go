@@ -9,8 +9,17 @@ import (
 	"github.com/andyleap/termbox-go"
 )
 
+type Kind int
+
+const (
+	KindNormal Kind = iota
+	KindComment
+	KindString
+)
+
 type Styler interface {
 	Style(pos int, ifg, ibg termbox.Attribute) (fg, bg termbox.Attribute)
+	Kind(pos int) Kind
 	Insert(pos int)
 	Delete(pos int)
 	Clear()
@@ -268,6 +277,10 @@ func (b *Buffer) Render(r core.Rect) {
 
 func (b *Buffer) AddStyler(s Styler) {
 	b.stylers = append(b.stylers, s)
+}
+
+func (b *Buffer) GetStylers() []Styler {
+	return b.stylers
 }
 
 func (b *Buffer) Insert(ch rune) {

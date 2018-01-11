@@ -26,6 +26,8 @@ type GoSense struct {
 
 	Selected int
 	Scroll   int
+
+	Help string
 }
 
 func New(b *buffer.Buffer) *GoSense {
@@ -42,7 +44,7 @@ func (gs *GoSense) Render(r core.Rect) {
 			finalRect.H = len(gs.Options)
 		}
 		if cY > r.H/2 && len(gs.Options) > finalRect.H {
-			finalRect = core.Rect{r.X + cX, r.Y, 40, (cY)}
+			finalRect = core.Rect{r.X + cX, r.Y, 120, (cY)}
 			if finalRect.H > len(gs.Options) {
 				finalRect.H = len(gs.Options)
 				finalRect.Y = r.Y + (cY - len(gs.Options))

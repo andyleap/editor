@@ -50,3 +50,20 @@ func (s *Stack) Handle(r Rect, evt termbox.Event) bool {
 	}
 	return false
 }
+
+type StatusBar struct {
+	Main UI
+	Bar UI
+}
+
+func (s *StatusBar) Render(r Rect) {
+	s.Main.Render(Rect{r.X, r.Y, r.W, r.H-1})
+	s.Bar.Render(Rect{r.X, r.Y+r.H-1, r.W, 1})
+}
+
+func (s *StatusBar) Handle(r Rect, evt termbox.Event) bool {
+	if s.Main.Handle(Rect{r.X, r.Y, r.W, r.H-1}, evt) {
+		return true
+	}
+	return s.Bar.Handle(Rect{r.X, r.Y+r.H-1, r.W, 1}, evt)
+}
