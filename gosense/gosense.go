@@ -92,7 +92,13 @@ func (gs *GoSense) Handle(r core.Rect, evt termbox.Event) bool {
 			case termbox.KeyEsc:
 				gs.Options = nil
 			case termbox.KeyEnter, termbox.KeyTab, termbox.KeySpace:
-				gs.b.InsertString(gs.Options[gs.Selected].Name[gs.Offset:])
+				pos := gs.b.Pos()
+				for l1 := gs.Offset; l1 > 0; l1-- {
+					gs.b.GB.Delete(pos)
+					pos--
+				}
+				gs.b.SetPos(pos)
+				gs.b.InsertString(gs.Options[gs.Selected].Name)
 				gs.Options = nil
 				return true
 			case termbox.KeyArrowDown:
