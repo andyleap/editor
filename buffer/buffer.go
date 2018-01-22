@@ -367,12 +367,38 @@ func (b *Buffer) Handle(r core.Rect, evt termbox.Event) bool {
 			}
 			b.SetPos(curPos)
 		case termbox.KeyEnter:
-			ch = '\n'
+			b.Sel = -1
+			pos := b.Pos()-1
+			tabs := 0
+			for pos >= 0 && b.GB.Get(pos) != '\n' {
+				if b.GB.Get(pos) == '\t' {
+					tabs++
+				} else {
+					tabs = 0
+				}
+				pos--
+			}
+			b.Insert('\n')
+			for tabs > 0 {
+				b.Insert('\t')
+				tabs--
+			}
+			break
 		case termbox.KeySpace:
 			ch = ' '
 		case termbox.KeyTab:
 			ch = '\t'
 		case termbox.KeyBackspace, termbox.KeyBackspace2:
+			if b.Sel != -1 {
+				curPos := b.Pos()
+				pos1, pos2 := b.Sel, curPos
+				if pos1 > pos2 {
+					pos1, pos2 = pos2, pos1
+				}
+				b.GB.Cut(pos1, pos2-pos1)
+				b.Sel = -1
+				break
+			}
 			b.Sel = -1
 			curPos := GetPos(b.GB, b.CurX, b.CurY)
 			if curPos <= 0 {
